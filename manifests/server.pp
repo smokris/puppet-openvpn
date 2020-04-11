@@ -478,7 +478,7 @@ define openvpn::server (
   String $pam_module_arguments                                      = 'login',
   Boolean $management                                               = false,
   String $management_ip                                             = 'localhost',
-  Variant[Stdlib::Port::Unprivileged,Enum['unix']] $management_port = 7505,
+  Integer $management_port                                          = 7505,
   String $up                                                        = '',
   String $down                                                      = '',
   Boolean $username_as_common_name                                  = false,
@@ -545,7 +545,10 @@ define openvpn::server (
 
   if $::openvpn::manage_service {
     if $::openvpn::params::systemd {
-      $lnotify = Service["openvpn@${name}"]
+      $lnotify = $::os['release']['major'] ? {
+        '7' => Service["openvpn@${name}"],
+        '8' => Service["openvpn-server@${name}"],
+      }
     } elsif $::openvpn::params::namespecific_rclink {
       $lnotify = Service["openvpn_${name}"]
     } else {
@@ -732,14 +735,18 @@ define openvpn::server (
 
   if $::openvpn::params::systemd {
     if $::openvpn::manage_service {
-      service { "openvpn@${name}":
+      $service_name = $::os['release']['major'] ? {
+        '7' => "openvpn@${name}",
+        '8' => "openvpn-server@${name}",
+      }
+      service { $service_name:
         ensure   => running,
         enable   => true,
         provider => 'systemd',
         require  => File["${etc_directory}/openvpn/${name}.conf"],
       }
       if !$extca_enabled and !$remote {
-        Openvpn::Ca[$ca_name] -> Service["openvpn@${name}"]
+        Openvpn::Ca[$ca_name] -> Service[$service_name]
       }
     }
   }

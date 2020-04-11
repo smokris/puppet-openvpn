@@ -128,7 +128,6 @@ define openvpn::ca (
     ensure             => directory,
     recurse            => true,
     links              => 'follow',
-    source_permissions => 'use',
     group              => 0,
     source             => "file:${openvpn::params::easyrsa_source}",
     require            => File["${etc_directory}/openvpn/${name}"],
@@ -224,8 +223,13 @@ define openvpn::ca (
         }
       }
 
+      $easyrsa_command = $::os['family'] ? {
+        'Solaris' => '/opt/local/bin/easyrsa',
+        default   => './easyrsa',
+      }
+
       exec { "initca ${name}":
-        command  => './easyrsa --batch init-pki && ./easyrsa --batch build-ca nopass',
+        command  => "${easyrsa_command} --batch init-pki && ${easyrsa_command} --batch build-ca nopass",
         cwd      => "${etc_directory}/openvpn/${name}/easy-rsa",
         creates  => "${etc_directory}/openvpn/${name}/easy-rsa/keys/ca.crt",
         provider => 'shell',
@@ -233,7 +237,7 @@ define openvpn::ca (
       }
 
       exec { "generate dh param ${name}":
-        command  => './easyrsa --batch gen-dh',
+        command  => "${easyrsa_command} --batch gen-dh",
         cwd      => "${etc_directory}/openvpn/${name}/easy-rsa",
         creates  => "${etc_directory}/openvpn/${name}/easy-rsa/keys/dh.pem",
         provider => 'shell',
@@ -241,7 +245,7 @@ define openvpn::ca (
       }
 
       exec { "generate server cert ${name}":
-        command  => "./easyrsa build-server-full ${common_name} nopass",
+        command  => "${easyrsa_command} build-server-full ${common_name} nopass",
         cwd      => "${etc_directory}/openvpn/${name}/easy-rsa",
         creates  => "${etc_directory}/openvpn/${name}/easy-rsa/keys/private/${common_name}.key",
         provider => 'shell',

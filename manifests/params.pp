@@ -28,6 +28,11 @@ class openvpn::params {
       $easyrsa_source      = '/usr/share/easy-rsa/3'
 
       case $facts['os']['release']['major'] {
+        '8': {
+          $additional_packages = ['easy-rsa']
+          $ldap_auth_plugin_location = undef
+          $systemd = true
+        }
         '7': {
           $additional_packages = ['easy-rsa']
           $ldap_auth_plugin_location = undef
@@ -109,6 +114,17 @@ class openvpn::params {
       $namespecific_rclink = true
       $systemd             = false
     }
+    'Solaris': {
+      $etc_directory       = '/opt/local/etc'
+      $root_group          = 'root'
+      $group               = 'nogroup'
+      $link_openssl_cnf    = true
+      $additional_packages = ['easy-rsa']
+      $easyrsa_source      = '/opt/local/share/examples/easyrsa'
+      $default_easyrsa_ver = '3.0'
+      $namespecific_rclink = false
+      $systemd             = false
+    }
     default: {
       fail("unsupported OS ${facts['os']['name']} ${facts['os']['release']['major']}")
     }
@@ -116,6 +132,7 @@ class openvpn::params {
 
   $easyrsa_version = $facts['easyrsa'] ? {
     undef   => $default_easyrsa_ver,
+    ''      => $default_easyrsa_ver,
     default => $facts['easyrsa'],
   }
 }

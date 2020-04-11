@@ -85,6 +85,7 @@ define openvpn::client_specific_config (
   Variant[Boolean, String] $ifconfig = false,
   Array[String]  $dhcp_options       = [],
   Boolean $redirect_gateway          = false,
+  String $compression                = '',
 ) {
 
   Openvpn::Server[$server]
