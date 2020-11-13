@@ -256,6 +256,11 @@ define openvpn::client (
     $env_expire = ''
   }
 
+  $easyrsa_command = $::os['family'] ? {
+    'Solaris' => '/opt/local/bin/easyrsa',
+    default   => './easyrsa',
+  }
+
   case $openvpn::params::easyrsa_version {
     '2.0': {
       exec { "generate certificate for ${name} in context of ${ca_name}":
@@ -279,7 +284,7 @@ define openvpn::client (
     }
     '3.0': {
       exec { "generate certificate for ${name} in context of ${ca_name}":
-        command  => ". ./vars && ${env_expire} ./easyrsa --batch build-client-full ${name} nopass",
+        command  => ". ./vars && ${env_expire} ${easyrsa_command} --batch build-client-full ${name} nopass",
         cwd      => "${etc_directory}/openvpn/${ca_name}/easy-rsa",
         creates  => "${etc_directory}/openvpn/${ca_name}/easy-rsa/keys/issued/${name}.crt",
         provider => 'shell';
